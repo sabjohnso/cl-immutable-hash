@@ -1,0 +1,38 @@
+#!/bin/bash
+#|
+
+set -euo pipefail
+scriptdir=$(cd $(dirname $0) && pwd)
+scriptpath=$scriptdir/$(basename $0)
+sbcl --script $scriptpath
+exit $?
+|#
+
+(require :sb-cover)
+(require :asdf)
+
+
+
+(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp" (user-homedir-pathname))))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
+
+(ql:quickload "fiveam")
+
+(declaim (optimize sb-cover:store-coverage-data))
+(asdf:oos 'asdf:load-op :immutable-hash :force t)
+
+(declaim (optimize (sb-cover:store-coverage-data 0)))
+(asdf:oos 'asdf:load-op :immutable-hash/test :force t)
+
+(if (5am:run-all-tests)
+
+    ;; The tests passed. Generate the coverage report. Then return
+    ;; an exit code of 0 to indicate success.
+    (progn
+      (sb-cover:report "coverage/report/")
+      (sb-ext:exit :code 0))
+
+    ;; The tests failed.  Skip the coverage report and return an
+    ;; exit code of 1 to indicate failure.
+    (sb-ext:exit :code 1))

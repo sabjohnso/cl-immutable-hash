@@ -3,9 +3,19 @@
 (deftype optional-node ()
   `(or null node))
 
-(defstruct immutable-set
-  (node nil :type optional-node)
-  (comp nil :type boolean))
+(eval-when (:load-toplevel :compile-toplevel :execute)
+ (defstruct immutable-set
+   (node nil :type optional-node)
+   (comp nil :type boolean)))
+
+(defparameter *set-depth* 0)
+
+(defmethod hash ((obj immutable-set))
+  (apply #'logxor
+         (ash (sxhash 'immutable-set) (- *set-depth*))
+         (let ((*set-depth* (1+ *set-depth*))) (mapcar #'hash (immutable-set-to-list obj)))))
+
+(define-constant empty-immutable-set (make-immutable-set))
 
 (defun immutable-set-complement (set)
   (with-slots (node comp) set
@@ -23,7 +33,7 @@
          stream)
         (print-object `(immutable-set ,@(immutable-set-to-list obj)) stream))))
 
-(define-symbol-macro empty-immutable-set (immutable-set))
+;; (define-symbol-macro empty-immutable-set (immutable-set))
 
 (defun immutable-set-count (set)
   (with-slots (node) set
@@ -37,8 +47,8 @@
 (defun immutable-set-member (set member)
   (with-slots (node comp) set
     (if comp
-        (not (and node (node-has-key member (sxhash member) 0 node)))
-        (and node (node-has-key member (sxhash member) 0 node)))))
+        (not (and node (node-has-key member (hash member) 0 node)))
+        (and node (node-has-key member (hash member) 0 node)))))
 
 (defun immutable-set-union (&rest sets)
   (cond ((= 2 (length sets)) (immutable-set-union2 (car sets) (cadr sets)))
@@ -133,50 +143,48 @@
                    do (setf new-set (immutable-set-remove new-set member))
                    finally (return new-set))))))
 
-(defun immutable-set-symmetric-difference (&rest sets)
-  (let ((n (length sets)))
-    (cond ((= n 2)
-           (let ((set0 (car sets))
-                 (set1 (cadr sets)))
-             (immutable-set-difference
-              (immutable-set-union set0 set1)
-              (immutable-set-intersection set0 set1))))
-          ((> n 2) (error "Not implemented"))
-          ((= n 1) (car sets))
-          ((zerop n) (immutable-set)))))
+(defun immutable-set-hash (set)
+  (let ((members (immutable-set-to-list set)))
+    (apply #'logxor (mapcar #'sxhash members))))
+
+(defun immutable-set-symmetric-difference (set0 set1)
+  (immutable-set-difference
+   (immutable-set-union set0 set1)
+   (immutable-set-intersection set0 set1)))
 
 (defun immutable-set (&rest members)
   (if members
       (loop for member in members
-            for set = (immutable-set-add (immutable-set) member) then (immutable-set-add set member)
+            for set = (immutable-set-add empty-immutable-set member) then (immutable-set-add set member)
             finally (return set))
-      (make-immutable-set :node nil)))
+      empty-immutable-set))
 
 (defun immutable-set-add (set new-member)
   (declare (type immutable-set set))
   (if (immutable-set-member set new-member) set
       (with-slots (node) set
         (make-immutable-set
-         :node (node-add new-member t (sxhash new-member) 0 (or node (make-node)))))))
+         :node (node-add new-member t (hash new-member) 0 (or node (make-node)))))))
 
 (defun immutable-set-remove (set member)
   (declare (type immutable-set set))
   (with-slots (node) set
     (if (and node (immutable-set-member set member))
         (make-immutable-set
-         :node (node-remove member (sxhash member) 0 node))
+         :node (node-remove member (hash member) 0 node))
         set)))
 
 (defun immutable-set-to-list (set)
   (with-slots (node comp) set
-    (if comp (error "Cannot enumerate members of an infinite set -( 0 )-")
+    (if comp (error "Cannot enumerate members of an infinite set")
         (mapcar #'car (and node (node-to-list node))))))
 
 (defun immutable-set-sub-super (subset superset)
   (cond ((and (immutable-set-complement-p subset) (immutable-set-complement-p superset))
-         (error "not implemented -( 00 )-"))
-        ((immutable-set-complement-p subset) (error "not implemented -( 1 )-"))
-        ((immutable-set-complement-p superset) (error "not implemented -( 2 )-"))
+         (immutable-set-sub-super
+          (immutable-set-complement superset)
+          (immutable-set-complement subset)))
+        ((immutable-set-complement-p subset) nil)
         (t (loop for member in (immutable-set-to-list subset)
                  when (not (immutable-set-member superset member))
                    do (return nil)
@@ -194,3 +202,20 @@
 
 (defun list-to-immutable-set (inputs)
   (apply #'immutable-set inputs))
+
+(defun immutable-set-map (func set)
+  (list-to-immutable-set (mapcar func (immutable-set-to-list set))))
+
+(defun immutable-set-pure (member)
+  (immutable-set member))
+
+(defun immutable-set-product (set0 set1)
+  (let ((members0 (immutable-set-to-list set0))
+        (members1 (immutable-set-to-list set1)))
+    (apply #'immutable-set
+           (loop for member0 in members0
+                 appending (loop for member1 in members1
+                                 collecting (list member0 member1))))))
+
+(defun immutable-set-flatten (set-of-sets)
+  (apply #'immutable-set-union (immutable-set-to-list set-of-sets)))

@@ -1,8 +1,6 @@
 ;; This file is part of the immutable-hash library
 (in-package :immutable-hash)
 
-
-
 (eval-when (:load-toplevel :compile-toplevel :execute)
 
   (define-constant log2-chunk-size 5
@@ -13,6 +11,10 @@
 
   (define-constant hash-fragment-mask (1- (expt 2 log2-chunk-size))
     "A mask used to select a subhash for banch indexing"))
+
+(defgeneric hash (obj))
+(defmethod hash (obj)
+  (sxhash obj))
 
 (deftype hash ()
   (type-of (sxhash nil)))
@@ -142,6 +144,7 @@
 
 
 (defun node-has-key (key hash depth node)
+  (declare (type node node))
   (let ((hash-fragment (hash-fragment hash depth)))
     (with-slots (chunk used) node
       (and (node-using-slot node hash-fragment)
@@ -151,6 +154,7 @@
              (chunk-has-key key hash depth hash-fragment chunk))))))
 
 (defun node-add (key value hash depth node)
+  (declare (type node node))
   (let ((hash-fragment (hash-fragment hash depth)))
     (with-slots (chunk used) node
       (let ((new-chunk (chunk-add key value hash depth hash-fragment node chunk))
@@ -235,6 +239,10 @@
 (defun chunk-ref (chunk hash-fragment)
   (aref (chunk-data chunk) hash-fragment))
 
+(defun node-ref (node hash-fragment)
+  (with-slots (chunk) node
+    (chunk-ref chunk hash-fragment)))
+
 (defun node-item-count (node)
   (the integer
     (with-slots (chunk used) node
@@ -301,3 +309,16 @@
                   (with-slots (data) new-chunk
                     (setf (aref data hash-fragment) new-node)
                     (make-node :chunk new-chunk :used used)))))))))
+
+(defun node-lookup (key hash depth node)
+  (let* ((hash-fragment (hash-fragment hash depth))
+         (item (node-ref node hash-fragment)))
+    (cond ((node-p item) (node-lookup key hash (1+ depth) item))
+          ((leaf-p item)
+           (with-slots ((new-hash hash) value) item
+             (if (= hash new-hash) value
+                 (lookup-error key))))
+          ((null item) (lookup-error key)))))
+
+(defun lookup-error (key)
+  (error "Could not lookup key ~s" key))

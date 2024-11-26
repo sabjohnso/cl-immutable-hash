@@ -15,8 +15,10 @@
     ((:file "package")
      (:file "utility")
      (:file "core")
+     (:file "set")
      (:file "table")
-     (:file "set"))))
+     (:file "terse-set")
+     (:file "terse-hash-map"))))
   :in-order-to
   ((test-op
     (load-op :immutable-hash)

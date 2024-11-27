@@ -23,18 +23,15 @@
                    finally (return node)))
    empty-immutable-hash-table))
 
-
 ;; (declaim (ftype (function (immutable-hash-table) boolean) immutable-hash-table-empty-p))
 (defun immutable-hash-table-empty-p (table)
   (with-slots (node) table
     (null node)))
 
-
 (defun immutable-hash-table-count (table)
   (with-slots (node) table
     (if (null node) 0
         (node-item-count node))))
-
 
 ;; (declaim (ftype (function (immutable-hash-table t) boolean) immutable-hash-table-has-key))
 (defun immutable-hash-table-has-key (table key)

@@ -16,8 +16,8 @@
      (:file "utility")
      (:file "core")
      (:file "set")
-     (:file "table")
      (:file "terse-set")
+     (:file "hash-map")
      (:file "terse-hash-map"))))
   :in-order-to
   ((test-op
@@ -30,7 +30,7 @@
   :components
   ((:module "test"
     :components
-    ((:file "table-test")
+    ((:file "hash-map-test")
      (:file "set-test"))))
   :perform (test-op (op sys)
             (symbol-call :immutable-hash/test.set :run-all-tests!)

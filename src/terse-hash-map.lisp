@@ -1,5 +1,7 @@
 (in-package :immutable-hash-map)
 
+(deftype hash-map ()
+  'immutable-hash-table)
 (define-symbol-macro empty-hash-map empty-immutable-hash-table)
 (setf (symbol-function 'hash-map) #'immutable-hash-table)
 (setf (symbol-function 'alist-to-hash-map) #'alist-to-immutable-hash-table)

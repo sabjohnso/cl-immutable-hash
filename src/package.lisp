@@ -29,23 +29,23 @@
 
   ;; Hash table exports
   (:export
-   #:empty-immutable-hash-table
-   #:immutable-hash-table
-   #:alist-to-immutable-hash-table
-   #:immutable-hash-table-p
-   #:immutable-hash-table-empty-p
-   #:immutable-hash-table-count
-   #:immutable-hash-table-has-key
-   #:immutable-hash-table-ref
-   #:immutable-hash-table-keys
-   #:immutable-hash-table-values
-   #:immutable-hash-table-items
-   #:immutable-hash-table-add
-   #:immutable-hash-table-remove
-   #:immutable-hash-table-union
-   #:immutable-hash-table-intersection
-   #:immutable-hash-table-difference
-   #:immutable-hash-table-symmetric-difference))
+   #:empty-immutable-hash-map
+   #:immutable-hash-map
+   #:alist-to-immutable-hash-map
+   #:immutable-hash-map-p
+   #:immutable-hash-map-empty-p
+   #:immutable-hash-map-count
+   #:immutable-hash-map-has-key
+   #:immutable-hash-map-ref
+   #:immutable-hash-map-keys
+   #:immutable-hash-map-values
+   #:immutable-hash-map-items
+   #:immutable-hash-map-add
+   #:immutable-hash-map-remove
+   #:immutable-hash-map-union
+   #:immutable-hash-map-intersection
+   #:immutable-hash-map-difference
+   #:immutable-hash-map-symmetric-difference))
 
 (defpackage :immutable-hash-terse-set
   (:nicknames :set)

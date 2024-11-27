@@ -34,4 +34,4 @@
      (:file "set-test"))))
   :perform (test-op (op sys)
             (symbol-call :immutable-hash/test.set :run-all-tests!)
-            (symbol-call :immutable-hash/test.table :run-all-tests!)))
+            (symbol-call :immutable-hash/test.hash-map :run-all-tests!)))

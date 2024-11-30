@@ -7,7 +7,7 @@
 
 (defsystem :immutable-hash
   :description "Immutable hash tables and sets"
-  :depends-on (:bordeaux-threads)
+  :depends-on (:bordeaux-threads :contextual :lazy-seq)
   :components
   ((:module "src"
     :serial t
@@ -32,6 +32,7 @@
     :components
     ((:file "hash-map-test")
      (:file "set-test"))))
-  :perform (test-op (op sys)
-            (symbol-call :immutable-hash/test.set :run-all-tests!)
-            (symbol-call :immutable-hash/test.hash-map :run-all-tests!)))
+  :perform
+  (test-op (op sys)
+   (symbol-call :immutable-hash/test.set :run-all-tests!)
+   (symbol-call :immutable-hash/test.hash-map :run-all-tests!)))

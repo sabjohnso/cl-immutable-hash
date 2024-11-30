@@ -25,15 +25,15 @@
   (immutable-set-comp set))
 
 (defmethod print-object ((obj immutable-set) stream)
-  (with-slots (node comp) obj
-    (if comp
-        (print-object
-         `(immutable-set-complement
-           (immutable-set ,@(immutable-set-to-list (immutable-set-complement obj))))
-         stream)
-        (print-object `(immutable-set ,@(immutable-set-to-list obj)) stream))))
-
-;; (define-symbol-macro empty-immutable-set (immutable-set))
+  (if *print-readably*
+      (call-next-method)
+      (with-slots (node comp) obj
+        (if comp
+            (print-object
+             `(set:complement
+               (set:set ,@(immutable-set-to-list (immutable-set-complement obj))))
+             stream)
+            (print-object `(set:set ,@(immutable-set-to-list obj)) stream)))))
 
 (defun immutable-set-count (set)
   (with-slots (node) set
@@ -179,6 +179,13 @@
     (if comp (error "Cannot enumerate members of an infinite set")
         (mapcar #'car (and node (node-to-list node))))))
 
+(defun immutable-set-to-seq (set)
+  (lz:lazy
+    (with-slots (node comp) set
+      (if comp (error "Cannot enumerate members of an infinite set")
+          (if node (lz:seq-fmap #'car (node-to-seq node))
+              lz:empty-seq)))))
+
 (defun immutable-set-sub-super (subset superset)
   (cond ((and (immutable-set-complement-p subset) (immutable-set-complement-p superset))
          (immutable-set-sub-super
@@ -203,11 +210,22 @@
 (defun list-to-immutable-set (inputs)
   (apply #'immutable-set inputs))
 
-(defun immutable-set-map (func set)
+(defun immutable-set-fmap (func set)
   (list-to-immutable-set (mapcar func (immutable-set-to-list set))))
 
 (defun immutable-set-pure (member)
   (immutable-set member))
+
+(defun immutable-set-fapply (funs args)
+  (loop for fun in (immutable-set-to-list funs)
+        for accum = (immutable-set-fmap fun args)
+          then (immutable-set-union accum (immutable-set-fmap fun args))
+        finally (return accum)))
+
+(defun immutable-set-flatmap (fun args)
+  (loop for arg in (immutable-set-to-list args)
+        for accum = (funcall fun arg) then (immutable-set-union accum (funcall fun arg))
+        finally (return accum)))
 
 (defun immutable-set-product (set0 set1)
   (let ((members0 (immutable-set-to-list set0))
@@ -219,3 +237,13 @@
 
 (defun immutable-set-flatten (set-of-sets)
   (apply #'immutable-set-union (immutable-set-to-list set-of-sets)))
+
+(defun make-immutable-set-context ()
+  (make-instance 'contextual:monad-plus-operators
+    :fmap #'immutable-set-fmap
+    :pure #'immutable-set-pure
+    :fapply #'immutable-set-fapply
+    :product #'immutable-set-product
+    :flatmap #'immutable-set-flatmap
+    :mzero (lambda () empty-immutable-set)
+    :mplus #'immutable-set-union))

@@ -5,10 +5,13 @@
     (node nil :type optional-node)))
 
 (defmethod print-object ((obj immutable-hash-map) stream)
-  (with-slots (node) obj
-      (print-object
-       (cons 'immutable-hash-map (and node (node-to-list node)))
-       stream)))
+  (if *print-readably*
+      (call-next-method)
+      (with-slots (node) obj
+        (print-object
+         `(hash-map:hash-map ,(and node (node-to-list node)))
+         stream))))
+
 (define-constant empty-immutable-hash-map (make-immutable-hash-map))
 
 (defun immutable-hash-map (&rest key-value-pairs)
@@ -23,7 +26,6 @@
                    finally (return node)))
    empty-immutable-hash-map))
 
-;; (declaim (ftype (function (immutable-hash-map) boolean) immutable-hash-map-empty-p))
 (defun immutable-hash-map-empty-p (table)
   (with-slots (node) table
     (null node)))
@@ -33,7 +35,6 @@
     (if (null node) 0
         (node-item-count node))))
 
-;; (declaim (ftype (function (immutable-hash-map t) boolean) immutable-hash-map-has-key))
 (defun immutable-hash-map-has-key (table key)
   (with-slots (node) table
     (and node (node-has-key key (hash key) 0 node))))
@@ -91,7 +92,6 @@
             then (immutable-hash-map-add new-table key (get-value key))
           finally (return new-table))))
 
-
 (defun immutable-hash-map-intersection (table0 table1 &optional (combine #'cons))
   (flet ((combine-key (key)
            (funcall combine
@@ -117,3 +117,21 @@
   (immutable-hash-map-difference
    (immutable-hash-map-union table0 table1 #'cons)
    (immutable-hash-map-intersection table0 table1 (lambda (x y) (declare (ignore x y)) nil))))
+
+(defun immutable-hash-map-fmap (fun table)
+  (loop for item in (immutable-hash-map-items table)
+        for accum = (immutable-hash-map (cons (car item) (funcall fun (cdr item))))
+          then (immutable-hash-map-add accum (car item) (funcall fun (cdr item)))
+        finally (return accum)))
+
+(defun immutable-hash-map-items-seq (table)
+  (lz:lazy
+    (with-slots (node) table
+      (if node (node-to-seq node)
+          lz:empty-seq))))
+
+(defun immutable-hash-map-keys-seq (table)
+  (lz:seq-fmap #'car (immutable-hash-map-items-seq table)))
+
+(defun immutable-hash-map-values-seq (table)
+  (lz:seq-fmap #'cdr (immutable-hash-map-items-seq table)))

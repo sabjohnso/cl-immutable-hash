@@ -1,7 +1,8 @@
 (in-package :cl-user)
 
 (defpackage immutable-hash/test.set
-  (:use :cl :5am :immutable-hash)
+  (:use :cl :5am :contextual :immutable-hash)
+  (:shadowing-import-from :contextual #:fail)
   (:export :run-all-tests!))
 
 (in-package :immutable-hash/test.set)
@@ -308,3 +309,57 @@
               (immutable-set-difference set0 (immutable-set-complement set1)))))
 
         #||#))))
+
+(test algebraic-context
+  (let ((context (make-immutable-set-context)))
+
+    (is (immutable-set-equal
+         (immutable-set 1 2 3 4 5)
+         (ctx-run context
+           (flatten
+            (immutable-set (immutable-set 1 2 3)
+                           (immutable-set 3 4 5))))))
+
+    (is (immutable-set-equal
+         (immutable-set 4 5 6)
+         (ctx-run context
+          (flatten
+           (let-fun ((x (immutable-set 1 2))
+                     (y (immutable-set 3 4)))
+             (+ x y))))))
+
+
+    (is (= 2 (immutable-set-count
+              (ctx-run context
+                (fmap (lambda (x)
+                        (lambda (y)
+                          (+ x y)))
+                      (immutable-set 1 2))))))
+
+    (is (immutable-set-equal
+         (immutable-set 4 5 6)
+         (ctx-run context
+           (fapply (fmap (lambda (x)
+                           (lambda (y)
+                             (+ x y)))
+                         (immutable-set 1 2))
+                   (immutable-set 3 4)))))
+
+    (is (immutable-set-equal
+         (immutable-set 4 5 6)
+         (ctx-run context
+           (let-app ((x (immutable-set 1 2))
+                     (y (immutable-set 3 4)))
+             (+ x y)))))
+
+    (is (immutable-set-equal
+         (immutable-set 4 5 6)
+         (ctx-run context
+           (lift2 #'+ (immutable-set 1 2) (immutable-set 3 4)))))
+
+    (is (immutable-set-equal
+         (immutable-set 4 5 6)
+         (ctx-run context
+          (let-mon ((x (immutable-set 1 2))
+                    (y (immutable-set 3 4)))
+            (mreturn (+ x y))))))))

@@ -16,6 +16,9 @@
 (defmethod hash (obj)
   (sxhash obj))
 
+(defmethod hash ((obj function))
+  (sxhash (sb-kernel:get-lisp-obj-address obj)))
+
 (deftype hash ()
   (type-of (sxhash nil)))
 
@@ -31,16 +34,6 @@
   (with-slots (data) flags
     (zerop data)))
 
-;; int count(unsigned i) {
-;;   i = i - ((i >> 1) & 0x55555555);
-;;   i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
-;;   i = (i + (i >> 4)) & 0x0f0f0f0f;
-;;   i = i + (i >> 8);
-;;   i = i + (i >> 16);
-;;   return i & 0x3f;
-;; }
-;;
-;;
 (defun flags-count (flags)
   (assert (= chunk-size 32) () "This function is only valid if the chunk size is 32")
   (with-slots (data) flags
@@ -66,7 +59,7 @@
 
 (defmethod print-object ((obj flags) stream)
   (with-slots (data) obj
-    (print-object `(flags ,(format nil "#b~32,'0b" data)) stream)))
+    (format stream "#b~32,'0b" data)))
 
 (defun flags-ref (flags index)
   (with-slots (data) flags
@@ -130,7 +123,10 @@
   (used (make-flags) :type flags))
 
 (defmethod print-object ((obj node) stream)
-  (print-object `(node ,@(node-to-list obj)) stream))
+  (if *print-readably*
+      (let ((*print-readably* nil))
+        (call-next-method))
+      (call-next-method)))
 
 (defun node-using-slot (node hash-fragment)
   (with-slots (used) node
@@ -270,6 +266,22 @@
                                 (list (cons key value))))
                             (node-to-list (chunk-ref chunk i)))
                         nil))))
+
+(defun node-to-seq (node)
+  (with-slots (chunk) node
+    (labels ((recur (i)
+               (lz:lazy (if (= i chunk-size) lz:empty-seq
+                            (if (node-using-slot node i)
+                                (if (chunk-slot-is-leaf chunk i)
+                                    (let ((leaf (chunk-ref chunk i)))
+                                      (with-slots (key value) leaf
+                                        (lz:seq-cons (cons key value)
+                                                     (recur (1+ i)))))
+                                    (let ((node (chunk-ref chunk i)))
+                                      (lz:seq-append (node-to-seq node)
+                                                     (recur (1+ i)))))
+                                (recur (1+ i)))))))
+      (recur 0))))
 
 (defun node-remove (key hash depth node)
   (let ((hash-fragment (hash-fragment hash depth)))

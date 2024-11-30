@@ -1,4 +1,4 @@
-(in-package :immutable-hash-map)
+(in-package :hash-map)
 
 (deftype hash-map ()
   'immutable-hash-map)
@@ -13,6 +13,9 @@
 (setf (symbol-function 'keys) #'immutable-hash-map-keys)
 (setf (symbol-function 'vals) #'immutable-hash-map-values)
 (setf (symbol-function 'items) #'immutable-hash-map-items)
+(setf (symbol-function 'keys) #'immutable-hash-map-keys-seq)
+(setf (symbol-function 'in-values) #'immutable-hash-map-values-seq)
+(setf (symbol-function 'in-items) #'immutable-hash-map-items-seq)
 (setf (symbol-function 'add) #'immutable-hash-map-add)
 (setf (symbol-function 'remove) #'immutable-hash-map-remove)
 (setf (symbol-function 'union) #'immutable-hash-map-union)

@@ -24,7 +24,15 @@
    #:immutable-set-disjoint
    #:immutable-set-distinct
    #:immutable-set-to-list
+   #:immutable-set-to-seq
    #:list-to-immutable-set
+   #:immutable-set-fmap
+   #:immutable-set-pure
+   #:immutable-set-product
+   #:immutable-set-fapply
+   #:immutable-set-flatmap
+   #:immutable-set-flatten
+   #:make-immutable-set-context
    #:hash)
 
   ;; Hash table exports
@@ -40,6 +48,9 @@
    #:immutable-hash-map-keys
    #:immutable-hash-map-values
    #:immutable-hash-map-items
+   #:immutable-hash-map-keys-seq
+   #:immutable-hash-map-values-seq
+   #:immutable-hash-map-items-seq
    #:immutable-hash-map-add
    #:immutable-hash-map-remove
    #:immutable-hash-map-union
@@ -47,32 +58,33 @@
    #:immutable-hash-map-difference
    #:immutable-hash-map-symmetric-difference))
 
-(defpackage :immutable-hash-terse-set
+(defpackage :set
   (:nicknames :set)
   (:use :cl :immutable-hash)
-  (:shadow :set :set-difference)
+  (:shadow :set :set-difference :complement :count :member :remove :union :intersection)
   (:export
    #:set
    #:set-p
-   #:set-empty-p
-   #:set-count
-   #:set-member
-   #:set-add
-   #:set-remove
-   #:set-complement
-   #:set-union
-   #:set-intersection
-   #:set-difference
-   #:set-symmetric-difference
+   #:empty-p
+   #:count
+   #:member
+   #:add
+   #:remove
+   #:complement
+   #:union
+   #:intersection
+   #:difference
+   #:symmetric-difference
    #:empty-set
-   #:set-sub-super
+   #:sub-super
    #:set-equal
-   #:set-disjoint
-   #:set-distinct
+   #:disjoint
+   #:distinct
    #:set-to-list
+   #:in-set
    #:list-to-set))
 
-(defpackage :immutable-hash-map
+(defpackage :hash-map
   (:nicknames :hash-map)
   (:use :cl :immutable-hash)
   (:shadow :count :remove :union :intersection)
@@ -88,6 +100,9 @@
    #:keys
    #:values
    #:items
+   #:in-keys
+   #:in-values
+   #:in-items
    #:add
    #:remove
    #:union

@@ -4,6 +4,9 @@
   (:nicknames :ih)
   (:use :cl)
 
+  (:export
+   #:hash)
+
   ;; Set exports
   (:export
    #:immutable-set
@@ -25,6 +28,8 @@
    #:immutable-set-distinct
    #:immutable-set-to-list
    #:immutable-set-to-seq
+   #:immutable-set-first
+   #:immutable-set-rest
    #:list-to-immutable-set
    #:immutable-set-fmap
    #:immutable-set-pure
@@ -32,8 +37,7 @@
    #:immutable-set-fapply
    #:immutable-set-flatmap
    #:immutable-set-flatten
-   #:make-immutable-set-context
-   #:hash)
+   #:make-immutable-set-context)
 
   ;; Hash table exports
   (:export
@@ -61,7 +65,7 @@
 (defpackage :set
   (:nicknames :set)
   (:use :cl :immutable-hash)
-  (:shadow :set :set-difference :complement :count :member :remove :union :intersection)
+  (:shadow :set :set-difference :complement :count :member :remove :union :intersection :first :rest)
   (:export
    #:set
    #:set-p
@@ -82,6 +86,15 @@
    #:distinct
    #:set-to-list
    #:in-set
+   #:first
+   #:rest
+   #:set-fmap
+   #:set-pure
+   #:set-product
+   #:set-fapply
+   #:set-flatmap
+   #:set-flatten
+   #:make-immutable-set-context
    #:list-to-set))
 
 (defpackage :hash-map

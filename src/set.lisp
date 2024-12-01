@@ -247,3 +247,14 @@
     :flatmap #'immutable-set-flatmap
     :mzero (lambda () empty-immutable-set)
     :mplus #'immutable-set-union))
+
+(defun immutable-set-first (set)
+  (if (not (immutable-set-empty set))
+      (with-slots (node) set
+        (car (node-first node)))
+      (error "Cannot get first member from an empty set")))
+
+(defun immutable-set-rest (set)
+  (if (immutable-set-empty set) empty-immutable-set
+      (let ((member (immutable-set-first set)))
+        (immutable-set-remove set member))))

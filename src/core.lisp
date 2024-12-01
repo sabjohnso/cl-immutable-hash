@@ -267,6 +267,16 @@
                             (node-to-list (chunk-ref chunk i)))
                         nil))))
 
+(defun node-first (node)
+  (with-slots (chunk) node
+    (loop for i from 0 to (1- chunk-size)
+          when (node-using-slot node i)
+            do (return
+                 (if (chunk-slot-is-leaf chunk i)
+                     (with-slots (key value) (chunk-ref chunk i)
+                       (cons key value))
+                     (node-first (chunk-ref chunk i)))))))
+
 (defun node-to-seq (node)
   (with-slots (chunk) node
     (labels ((recur (i)

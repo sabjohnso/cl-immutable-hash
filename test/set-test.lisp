@@ -310,6 +310,14 @@
 
         #||#))))
 
+(test first/rest
+  (let* ((set (immutable-set 'a 'b))
+         (member (immutable-set-first set))
+         (subset (immutable-set-rest set)))
+    (is (immutable-set-member set member))
+    (is (not (immutable-set-member subset member)))
+    (is (immutable-set-equal set (immutable-set-add subset member)))))
+
 (test algebraic-context
   (let ((context (make-immutable-set-context)))
 
